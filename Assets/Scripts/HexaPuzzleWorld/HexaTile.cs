@@ -40,6 +40,7 @@ namespace HexaPuzzleWorld {
 
 		void GenerateTris() {			
 			InitTris ();
+			EnsureEdges ();
 			for (int i = 0; i < smoothings; i++) {
 				SmoothTris ();
 			}
