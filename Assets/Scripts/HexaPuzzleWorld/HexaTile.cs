@@ -9,7 +9,7 @@ namespace HexaPuzzleWorld {
 
 		[SerializeField, Range(1, 10)] int meshSubdivisionLvl = 1;
 		[SerializeField, Range(0, 10)] float size = 1f;
-		[SerializeField, Range(0, 3)] int smoothings = 0;
+		[SerializeField, Range(0, 10)] int smoothings = 0;
 		[SerializeField, Range(0, 3)] float heightFactor = 0.6f;
 		[SerializeField] float[] typeProbs;
 		[SerializeField] bool fillVerticals = true;
@@ -75,7 +75,80 @@ namespace HexaPuzzleWorld {
 		}
 
 		void SmoothTris() {
+			int rows = triGrid.GetLength (0);
+			int cols = triGrid.GetLength (1);
+			TriType[,] newTris = new TriType[rows, cols];
+			for (int row = 0; row < rows; row++) {
+				int tris = GetTrisInRow (row);
+				int startTri = (cols - tris) / 2;
+				for (int col = startTri, endTri = tris + startTri; col < endTri; col++) {
+					newTris [row, col] = GetSmoothTriType (row, col, rows, tris, true);			
+				}
+			}
+			triGrid = newTris;
+		}
 
+		TriType GetSmoothTriType(int row, int col, int maxRows, int maxCols, bool pointsUp) {
+			int[] votes = new int[4];
+			votes [(int) triGrid [row, col]] += 3;
+
+			if (col > 0) {
+				votes [(int)triGrid [row, col - 1]] += 2;
+			}
+			if (col < maxCols - 1) {
+				votes[(int)triGrid[row, col + 1]] += 2;
+			}
+			if (col > 1) {
+				votes [(int)triGrid [row, col - 2]] += 1;
+			}
+			if (col < maxCols - 2) {
+				votes [(int)triGrid [row, col + 2]] += 1;
+			}
+
+			int dir = pointsUp ? -1 : 1;
+			int row2 = row + dir;
+			if (row2 >= 0 && row2 < maxRows) {
+				
+				votes [(int)triGrid [row2, col]] += 2;
+				
+				if (col > 0) {
+					votes [(int)triGrid [row2, col - 1]] += 1;
+				}
+				if (col < maxCols - 1) {
+					votes[(int)triGrid[row2, col + 1]] += 1;
+				}
+				if (col > 1) {
+					votes [(int)triGrid [row2, col - 2]] += 1;
+				}
+				if (col < maxCols - 2) {
+					votes [(int)triGrid [row2, col + 2]] += 1;
+				}
+
+			}
+
+			int row3 = row - dir;
+			if (row3 >= 0 && row3 < maxRows) {
+
+				votes [(int)triGrid [row3, col]] += 2;
+
+				if (col > 0) {
+					votes [(int)triGrid [row3, col - 1]] += 1;
+				}
+				if (col < maxCols - 1) {
+					votes[(int)triGrid[row3, col + 1]] += 1;
+				}
+
+			}
+
+			TriType vote = TriType.None;
+			int nVotes = 0;
+			for (int i = 1; i < votes.Length; i++) {
+				if (votes [i] > nVotes) {
+					nVotes = votes [i];
+					vote = (TriType)i;
+				}
+			}
+			return vote;
 		}
 
 		void EnsureEdges() {
