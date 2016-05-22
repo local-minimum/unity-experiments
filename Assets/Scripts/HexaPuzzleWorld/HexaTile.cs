@@ -1,5 +1,5 @@
 ﻿using UnityEngine;
-using System.Collections;
+using System.Collections.Generic;
 
 namespace HexaPuzzleWorld {
 
@@ -105,21 +105,24 @@ namespace HexaPuzzleWorld {
 		void GenerateMesh() {
 			int triCount = NumberOfTriTiles;
 			mesh.Clear ();
-			mesh.vertices = GetMeshVerts (triCount);
-			mesh.triangles = GetMeshTris (triCount);
+			int[] walls;
+			mesh.vertices = GetMeshVerts (triCount, out walls);
+			mesh.triangles = GetMeshTris (triCount, walls);
 			mesh.uv = GetMeshUV (triCount);
 			mesh.RecalculateNormals ();
 			mesh.RecalculateBounds ();
 		}
 
-		Vector3[] GetMeshVerts(int triCount) {
+		Vector3[] GetMeshVerts(int triCount, out int[] walls) {
 			Vector3[] verts = new Vector3[triCount * 3];
 			// Debug.Log (verts.Length);
 			int rows = Rows;
+			List<int> wallVerts = new List<int> ();
 			int maxCols = MaxCols;
 			int idVert = 0;
 			bool subDiv1 = meshSubdivisionLvl != 1;
 			float step = size / rows;
+			int prevRow = 0;
 			for (int row = 0; row < rows; row++) {
 				int trisInRow = GetTrisInRow (row);
 				int startTri = (maxCols - trisInRow) / 2;
@@ -127,27 +130,61 @@ namespace HexaPuzzleWorld {
 					float y = GetHeight (triGrid [row, col]) * heightFactor;
 					float x = step * (col - maxCols / 2f);
 					float z = 2 * step * (row - rows / 2f);
+
 					if (col % 2 == row % 2 != subDiv1) {
 						verts [idVert] = new Vector3 (x, y, z - step);
 						verts [idVert + 2] = new Vector3 (x + step, y, z + step);
 						verts [idVert + 1] = new Vector3 (x - step, y, z + step);
+						if (fillVerticals && col != startTri && triGrid [row, col] != triGrid [row, col - 1]) {
+							wallVerts.Add (idVert - 2);
+							wallVerts.Add (idVert);
+							wallVerts.Add (idVert - 1);
+							wallVerts.Add (idVert - 2);
+							wallVerts.Add (idVert + 1);
+							wallVerts.Add (idVert);
+						}
 					} else {
+						
 						verts [idVert] = new Vector3 (x - step, y, z - step);
 						verts [idVert + 2] = new Vector3 (x + step, y, z - step);
 						verts [idVert + 1] = new Vector3 (x, y, z + step);
 
+						if (fillVerticals && col != startTri && triGrid [row, col] != triGrid [row, col - 1]) {
+							wallVerts.Add (idVert);
+							wallVerts.Add (idVert - 1);
+							wallVerts.Add (idVert + 1);
+							wallVerts.Add (idVert);
+							wallVerts.Add (idVert - 3);
+							wallVerts.Add (idVert - 1);
+						} 
+
+						if (fillVerticals && row > 0 && (col > startTri || row >= rows / 2) && triGrid [row, col] != triGrid [row - 1, col]) {
+							int prevOffset = Mathf.Min (trisInRow, prevRow) + Mathf.Abs ((prevRow - trisInRow) / 2);
+
+							wallVerts.Add (idVert);
+							wallVerts.Add (idVert - 3 * prevOffset + 2);
+							wallVerts.Add (idVert - 3 * prevOffset + 1);
+							wallVerts.Add (idVert);
+							wallVerts.Add (idVert + 2);
+							wallVerts.Add (idVert - 3 * prevOffset + 2);
+
+						}
 					}
+						
 					idVert+=3;
 				}
+				prevRow = trisInRow;
 			}
+			walls = wallVerts.ToArray ();
 			return verts;
 		}
 
-		int[] GetMeshTris(int triCount) {
-			int[] tris = new int[triCount * 3];
+		int[] GetMeshTris(int triCount, int[] walls) {
+			int[] tris = new int[triCount * 3 + walls.Length];
 			for (int i = 0; i < tris.Length; i++) {
 				tris [i] = i;
 			}
+			System.Array.Copy (walls, 0, tris, triCount * 3, walls.Length);
 			return tris;
 		}
 
