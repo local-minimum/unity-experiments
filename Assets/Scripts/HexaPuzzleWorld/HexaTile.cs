@@ -7,7 +7,7 @@ namespace HexaPuzzleWorld {
 
 	public class HexaTile : MonoBehaviour {
 
-		[SerializeField, Range(1, 10)] int meshSubdivisionLvl = 1;
+		[SerializeField, Range(1, 6)] int meshSubdivisionLvl = 1;
 		[SerializeField, Range(0, 10)] float size = 1f;
 		[SerializeField, Range(0, 10)] int smoothings = 0;
 		[SerializeField, Range(0, 3)] float heightFactor = 0.6f;
@@ -40,7 +40,7 @@ namespace HexaPuzzleWorld {
 
 		void GenerateTris() {			
 			InitTris ();
-			EnsureEdges ();
+
 			for (int i = 0; i < smoothings; i++) {
 				SmoothTris ();
 			}
@@ -52,7 +52,6 @@ namespace HexaPuzzleWorld {
 			int maxCols = MaxCols;
 			// Debug.Log ("Rows x Cols " + rows + " x " + maxCols);
 			triGrid = new TriType[rows, maxCols];
-			int triTypes = System.Enum.GetValues (typeof(TriType)).Length;
 
 			for (int row = 0; row < rows; row++) {
 				int tris = GetTrisInRow (row);
@@ -153,9 +152,101 @@ namespace HexaPuzzleWorld {
 		}
 
 		void EnsureEdges() {
-			if (meshSubdivisionLvl < 3)
+
+			if (meshSubdivisionLvl < 3) {
 				Debug.LogWarning ("Tile has too small division to ensure edge logic");
 				return;
+			}
+
+			int rows = Rows;
+			int cols = MaxCols;
+
+			int outerRow = GetTrisInRow (0);
+			int outerColStart = (cols - outerRow) / 2;
+			int midPt = (outerRow - 1) / 2;
+			int halfRows = rows / 2;
+			int gateSize = (outerRow - 1) / 2;
+			int gateOffset = (gateSize - 1) / 2;
+			int[] sideGates = new int[4];
+			int rowGateOffsets = halfRows / 4;
+
+			for (int row = 0; row < rows; row ++) {
+
+				if (row == 0 || row == rows - 1) {
+					//Ensuring top and bottom
+
+					int gate = 0;
+
+					for (int col = 0; col < outerRow; col++) {
+
+						if (Mathf.Abs (col - midPt) <= gateOffset) {
+							if (triGrid [row, col + outerColStart] == TriType.Ground)
+								gate++;
+							//} else if (triGrid [row, col] == TriType.Ground) {
+						} else {
+							triGrid [row, outerColStart + col] = GetClosestNonGround (row, outerColStart + col);					
+						}
+					}
+
+					if (gate > gateOffset / 2 && gate < gateSize) {
+						//Debug.Log ("Drawing gate " + row);
+						for (int offset = -gateOffset; offset <= gateOffset; offset++) {
+							triGrid [row, outerColStart + midPt - offset] = TriType.Ground;
+						}
+					} else {
+						//Debug.Log ("Clearing gate " + row);
+						for (int offset = -gateOffset; offset <= gateOffset; offset++) {
+							triGrid [row, outerColStart + midPt - offset] = GetClosestNonGround (row, outerColStart + midPt - offset);
+						}
+					}
+				} else {
+					
+					int colsInRow = GetTrisInRow (row);
+					int colStart = (cols - colsInRow) / 2;
+
+					if (Mathf.Abs ((row % halfRows) - (halfRows / 2 - 0.5f)) < rowGateOffsets) {
+						if (triGrid [row, colStart] == TriType.Ground) {
+							sideGates [(row < halfRows ? 0 : 2)]++;
+						}
+						if (triGrid [row, colStart + colsInRow - 1] == TriType.Ground) {
+							sideGates [1 + (row < halfRows ? 0 : 2)]++;
+						}
+						if (triGrid [row, colStart + 1] == TriType.Ground) {
+							sideGates [(row < halfRows ? 0 : 2)]++;
+						}
+						if (triGrid [row, colStart + colsInRow - 2] == TriType.Ground) {
+							sideGates [1 + (row < halfRows ? 0 : 2)]++;
+						}
+
+					} else {
+						triGrid [row, colStart] = GetClosestNonGround (row, colStart);
+						triGrid [row, colStart + 1] = GetClosestNonGround (row, colStart);
+						triGrid [row, colStart + colsInRow - 1] = GetClosestNonGround (row, colStart);
+						triGrid [row, colStart + colsInRow - 2] = GetClosestNonGround (row, colStart);
+					}
+
+				}
+			}
+			for (int row = 0; row < rows; row++) {
+
+				int colsInRow = GetTrisInRow (row);
+				int colStart = (cols - colsInRow) / 2;
+
+				if (Mathf.Abs ((row % halfRows) - (halfRows / 2 - 0.5f)) < rowGateOffsets) {
+					bool leftGate = sideGates [(row < halfRows ? 0 : 2)] > rowGateOffsets;
+					bool rightGate = sideGates [1 + (row < halfRows ? 0 : 2)] > rowGateOffsets;
+					triGrid [row, colStart] = leftGate ? TriType.Ground : GetClosestNonGround (row, colStart);
+					triGrid [row, colStart + 1] = leftGate ? TriType.Ground : GetClosestNonGround (row, colStart);
+					triGrid [row, colStart + colsInRow - 1] = rightGate ? TriType.Ground : GetClosestNonGround (row, colStart + colsInRow - 1);
+					triGrid [row, colStart + colsInRow - 2] = rightGate ? TriType.Ground : GetClosestNonGround (row, colStart + colsInRow - 2);
+
+				}
+
+			}
+		}
+
+		TriType GetClosestNonGround(int x, int y) {
+			return TriType.Abyss;
 		}
 
 		int Rows {
@@ -166,7 +257,6 @@ namespace HexaPuzzleWorld {
 
 		int MaxCols {
 			get {
-				int rows = Rows;
 				return 2 * Rows - 1;
 			}
 		}
@@ -180,35 +270,47 @@ namespace HexaPuzzleWorld {
 			int triCount = NumberOfTriTiles;
 			mesh.Clear ();
 			int[] walls;
-			mesh.vertices = GetMeshVerts (triCount, out walls);
+			Vector3[] wallNormals;
+			mesh.vertices = GetMeshVerts (triCount, out walls, out wallNormals);
 			mesh.triangles = GetMeshTris (triCount, walls);
 			mesh.uv = GetMeshUV (triCount);
-			mesh.RecalculateNormals ();
+			mesh.normals = GetNormals (triCount, wallNormals);
 			mesh.RecalculateBounds ();
 		}
 
-		Vector3[] GetMeshVerts(int triCount, out int[] walls) {
+		Vector3[] GetNormals(int ups, Vector3[] wallNormals) {
+			Vector3[] normals = new Vector3[ups * 3 + wallNormals.Length];
+			for (int i = 0; i < ups*3; i++) {
+				normals [i] = Vector3.up;
+			}
+			System.Array.Copy (wallNormals, 0, normals, ups, wallNormals.Length);
+			return normals;
+		}
+
+		Vector3[] GetMeshVerts(int triCount, out int[] walls, out Vector3[] wallNormals) {
 			Vector3[] verts = new Vector3[triCount * 3];
 			// Debug.Log (verts.Length);
 			int rows = Rows;
 			List<int> wallVerts = new List<int> ();
+			List<Vector3> wallNorms = new List<Vector3> ();
 			int maxCols = MaxCols;
 			int idVert = 0;
 			bool subDiv1 = meshSubdivisionLvl != 1;
 			float step = size / rows;
 			int prevRow = 0;
+			float zFactor = Mathf.Sqrt (3) / 2;
 			for (int row = 0; row < rows; row++) {
 				int trisInRow = GetTrisInRow (row);
 				int startTri = (maxCols - trisInRow) / 2;
 				for (int col = startTri, endTri = trisInRow + startTri; col < endTri; col++) {
 					float y = GetHeight (triGrid [row, col]) * heightFactor;
-					float x = step * (col - maxCols / 2f);
-					float z = 2 * step * (row - rows / 2f);
+					float x = step * (col - maxCols / 2f - 1f);
+					float z = 2 * step * (row - rows / 2f - 0.5f) * zFactor;
 
 					if (col % 2 == row % 2 != subDiv1) {
-						verts [idVert] = new Vector3 (x, y, z - step);
-						verts [idVert + 2] = new Vector3 (x + step, y, z + step);
-						verts [idVert + 1] = new Vector3 (x - step, y, z + step);
+						verts [idVert] = new Vector3 (x, y, z - step * zFactor);
+						verts [idVert + 2] = new Vector3 (x + step, y, z + step * zFactor);
+						verts [idVert + 1] = new Vector3 (x - step, y, z + step * zFactor);
 						if (fillVerticals && col != startTri && triGrid [row, col] != triGrid [row, col - 1]) {
 							wallVerts.Add (idVert - 2);
 							wallVerts.Add (idVert);
@@ -216,12 +318,14 @@ namespace HexaPuzzleWorld {
 							wallVerts.Add (idVert - 2);
 							wallVerts.Add (idVert + 1);
 							wallVerts.Add (idVert);
+							for (int i=0;i<6;i++)
+								wallNorms.Add (Vector3.left);
 						}
 					} else {
 						
-						verts [idVert] = new Vector3 (x - step, y, z - step);
-						verts [idVert + 2] = new Vector3 (x + step, y, z - step);
-						verts [idVert + 1] = new Vector3 (x, y, z + step);
+						verts [idVert] = new Vector3 (x - step, y, z - step * zFactor);
+						verts [idVert + 2] = new Vector3 (x + step, y, z - step * zFactor);
+						verts [idVert + 1] = new Vector3 (x, y, z + step * zFactor);
 
 						if (fillVerticals && col != startTri && triGrid [row, col] != triGrid [row, col - 1]) {
 							wallVerts.Add (idVert);
@@ -230,6 +334,9 @@ namespace HexaPuzzleWorld {
 							wallVerts.Add (idVert);
 							wallVerts.Add (idVert - 3);
 							wallVerts.Add (idVert - 1);
+							for (int i=0;i<6;i++)
+								wallNorms.Add (Vector3.right);
+							
 						} 
 
 						if (fillVerticals && row > 0 && (col > startTri || row >= rows / 2) && triGrid [row, col] != triGrid [row - 1, col]) {
@@ -241,7 +348,9 @@ namespace HexaPuzzleWorld {
 							wallVerts.Add (idVert);
 							wallVerts.Add (idVert + 2);
 							wallVerts.Add (idVert - 3 * prevOffset + 2);
-
+							for (int i=0;i<6;i++)
+								wallNorms.Add (Vector3.forward);
+							
 						}
 					}
 						
@@ -250,6 +359,8 @@ namespace HexaPuzzleWorld {
 				prevRow = trisInRow;
 			}
 			walls = wallVerts.ToArray ();
+			wallNorms.Clear ();
+			wallNormals = wallNorms.ToArray ();
 			return verts;
 		}
 
@@ -269,23 +380,23 @@ namespace HexaPuzzleWorld {
 			int idUV = 0;
 			float x = 0;
 			float y = 0;
-			float f = 0.4f / 2f;
+			float f = 0;
 			for (int row = 0; row < rows; row++) {
 				int trisInRow = GetTrisInRow (row);
 				int startTri = (maxCols - trisInRow) / 2;
 				for (int col = startTri, endTri = trisInRow + startTri; col < endTri; col++) {
 					if (triGrid [row, col] == TriType.Ground) {
-						x = 0.25f;
-						y = 0.75f;
+						x = 0.5f;
+						y = 0.5f;
 					} else if (triGrid [row, col] == TriType.Abyss) {
-						x = 0.25f;
-						y = 0.25f;
+						x = 0.5f;
+						y = 0.2f;
 					} else if (triGrid [row, col] == TriType.Wall) {
-						x = 0.75f;
-						y = 0.75f;
+						x = 0.5f;
+						y = 0.8f;
 					} else {
 						x = 0.75f;
-						y = 0.25f;
+						y = 0.75f;
 					}
 						
 					uv [idUV] = new Vector2 (x, y - f);
