@@ -234,6 +234,17 @@ namespace HexaPuzzleWorld {
 
 				}
 			}
+
+			if (sideGates [0] > rowGateOffsets)
+				openExits.Add (Directions.NW);
+			if (sideGates [1] > rowGateOffsets)
+				openExits.Add (Directions.NE);
+			if (sideGates [2] > rowGateOffsets)
+				openExits.Add (Directions.SW);
+			if (sideGates [3] > rowGateOffsets)
+				openExits.Add (Directions.SE);
+
+
 			for (int row = 0; row < rows; row++) {
 
 				int colsInRow = GetTrisInRow (row);
@@ -329,8 +340,8 @@ namespace HexaPuzzleWorld {
 
 					lvl = triGrid [row, col];
 					float y = GetHeight (lvl) * heightFactor;
-					float x = step * (col - maxCols / 2f - 1f);
-					float z = 2 * step * (row - rows / 2f - 0.5f) * zFactor;
+					float x = step * (col - maxCols / 2f + 0.5f);
+					float z = 2 * step * (row - rows / 2f + 0.5f) * zFactor;
 
 					if (col % 2 == row % 2 != subDiv1) {
 						verts [idVert] = new Vector3 (x, y, z - step * zFactor);
