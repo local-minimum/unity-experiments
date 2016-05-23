@@ -4,6 +4,7 @@ using System.Collections.Generic;
 namespace HexaPuzzleWorld {
 
 	public enum TriType {None, Abyss, Ground, Wall};
+	public enum Directions {N, NE, SE, S, SW, NW};
 
 	public class HexaTile : MonoBehaviour {
 
@@ -15,7 +16,7 @@ namespace HexaPuzzleWorld {
 		[SerializeField] bool fillVerticals = true;
 		[SerializeField, HideInInspector] Mesh mesh;
 		[SerializeField, HideInInspector] TriType[,]  triGrid;
-
+		[SerializeField, HideInInspector] List<Directions> openExits;
 
 		void Reset() {
 			var rend = GetComponent<MeshRenderer> ();
@@ -169,6 +170,7 @@ namespace HexaPuzzleWorld {
 			int gateOffset = (gateSize - 1) / 2;
 			int[] sideGates = new int[4];
 			int rowGateOffsets = halfRows / 4;
+			openExits.Clear ();
 
 			for (int row = 0; row < rows; row ++) {
 
@@ -189,7 +191,12 @@ namespace HexaPuzzleWorld {
 					}
 
 					if (gate > gateOffset / 2 && gate < gateSize) {
-						//Debug.Log ("Drawing gate " + row);
+						
+						if (row == 0)
+							openExits.Add (Directions.N);
+						else
+							openExits.Add (Directions.S);
+						
 						for (int offset = -gateOffset; offset <= gateOffset; offset++) {
 							triGrid [row, outerColStart + midPt - offset] = TriType.Ground;
 						}
@@ -289,7 +296,7 @@ namespace HexaPuzzleWorld {
 			for (int i = 0; i < ups*3; i++) {
 				normals [i] = Vector3.up;
 			}
-			System.Array.Copy (wallNormals, 0, normals, ups, wallNormals.Length);
+			System.Array.Copy (wallNormals, 0, normals, ups * 3, wallNormals.Length);
 			return normals;
 		}
 
@@ -390,7 +397,26 @@ namespace HexaPuzzleWorld {
 								wallNorms.Add (Vector3.left);
 
 						}
+							
+						if (IsEdgeNE (row, col)) {
 
+							xtraVerts.Add (new Vector3 (x + step, rimHeight, z + step * zFactor));
+							xtraLvls.Add (TriType.None);
+							xtraVerts.Add (new Vector3 (x, rimHeight, z - step * zFactor));
+							xtraLvls.Add (TriType.None);
+							xtraVerts.Add (verts[idVert + 2]);
+							xtraLvls.Add (lvl);
+
+							xtraVerts.Add (verts[idVert]);
+							xtraLvls.Add (lvl);
+							xtraVerts.Add (verts[idVert + 2]);
+							xtraLvls.Add (lvl);
+							xtraVerts.Add (new Vector3 (x, rimHeight, z - step * zFactor));
+							xtraLvls.Add (TriType.None);
+
+							for (int i=0;i<6;i++)
+								wallNorms.Add (Vector3.forward);
+						}
 														
 					} else {
 						
@@ -422,8 +448,7 @@ namespace HexaPuzzleWorld {
 						if (fillVerticals && row > 0 && (col > startTri || row >= rows / 2) && triGrid [row, col] != triGrid [row - 1, col]) {
 							int prevOffset = Mathf.Min (trisInRow, prevRow) + Mathf.Abs ((prevRow - trisInRow) / 2);
 
-							TriType otherLvl = TriType.Abyss;
-							heightLookup.TryGetValue (verts [idVert - 3 * prevOffset + 2].y, out otherLvl);
+							TriType otherLvl = triGrid [row - 1, col];
 
 							xtraVerts.Add (verts[idVert]);
 							xtraLvls.Add (lvl);
@@ -464,17 +489,51 @@ namespace HexaPuzzleWorld {
 								wallNorms.Add (Vector3.forward);
 						}
 
+						if (IsEdgeSE (row, col)) {
+							
+							xtraVerts.Add (new Vector3 (x + step, rimHeight, z - step * zFactor));
+							xtraLvls.Add (TriType.None);
+							xtraVerts.Add (verts[idVert + 1]);
+							xtraLvls.Add (lvl);
+							xtraVerts.Add (new Vector3 (x, rimHeight, z + step * zFactor));
+							xtraLvls.Add (TriType.None);
 
-						if (IsEdgeNE (row, col)) {
+							xtraVerts.Add (verts[idVert + 2]);
+							xtraLvls.Add (lvl);
+							xtraVerts.Add (verts[idVert + 1]);
+							xtraLvls.Add (lvl);
+							xtraVerts.Add (new Vector3 (x + step, rimHeight, z - step * zFactor));
+							xtraLvls.Add (TriType.None);
 
+							for (int i=0;i<6;i++)
+								wallNorms.Add (Vector3.forward);
 						}
 
+						if (IsEdgeSW (row, col)) {
+
+							xtraVerts.Add (new Vector3 (x - step, rimHeight, z - step * zFactor));
+							xtraLvls.Add (TriType.None);
+							xtraVerts.Add (new Vector3 (x, rimHeight, z + step * zFactor));
+							xtraLvls.Add (TriType.None);
+							xtraVerts.Add (verts[idVert + 1]);
+							xtraLvls.Add (lvl);
+
+							xtraVerts.Add (verts[idVert + 1]);
+							xtraLvls.Add (lvl);
+							xtraVerts.Add (verts[idVert]);
+							xtraLvls.Add (lvl);
+							xtraVerts.Add (new Vector3 (x - step, rimHeight, z - step * zFactor));
+							xtraLvls.Add (TriType.None);
+
+							for (int i=0;i<6;i++)
+								wallNorms.Add (Vector3.forward);
+						}
 					}
-						
+					prevLvl = lvl;
 					idVert+=3;
 				}
 				prevRow = trisInRow;
-				prevLvl = lvl;
+
 			}
 			Vector3[] allVerts = new Vector3[verts.Length + xtraVerts.Count];
 			System.Array.Copy (verts, allVerts, verts.Length);
@@ -500,11 +559,11 @@ namespace HexaPuzzleWorld {
 		}
 
 		bool IsEdgeSE(int row, int col) {
-			return (Rows / 2 - 1) - row == MaxCols - col;
+			return row - (Rows / 2 - 1) == MaxCols - col;
 		}
 
 		bool IsEdgeNE(int row, int col) {
-			return row - Rows / 2 == MaxCols - col;
+			return Rows / 2 - row == MaxCols - col;
 		}
 			
 		int[] GetMeshTris() {
