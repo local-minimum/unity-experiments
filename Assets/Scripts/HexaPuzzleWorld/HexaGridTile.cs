@@ -45,7 +45,7 @@ namespace HexaPuzzleWorld {
 				yield return new WaitForSeconds (rotationSpeed);
 			}
 			currentRotation = newRot % 6;
-			Debug.Log ("Rotated");
+
 			rotating = false;
 		}
 
@@ -58,7 +58,7 @@ namespace HexaPuzzleWorld {
 		}
 
 		void OnDrawGizmosSelected() {
-			Gizmos.DrawRay (transform.position, transform.up * 5);
+			Gizmos.DrawRay (transform.position, transform.up * 3);
 		}
 	}
 }
