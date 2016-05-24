@@ -74,12 +74,11 @@ namespace HexaPuzzleWorld {
 			rotating = true;
 			Quaternion fromRot = transform.rotation;
 			Quaternion toRot = playingField.GetRotation (newRot);
-
+			currentRotation = newRot % 6;
 			for (int i = 0; i < rotationSteps + 1; i++) {
-				transform.localRotation = Quaternion.Lerp (fromRot, toRot, rotoTransition.Evaluate (i / (float)rotationSteps));
+				transform.rotation  = Quaternion.Lerp (fromRot, toRot, rotoTransition.Evaluate (i / (float)rotationSteps));
 				yield return new WaitForSeconds (rotationSpeed);
 			}
-			currentRotation = newRot % 6;
 
 			rotating = false;
 		}

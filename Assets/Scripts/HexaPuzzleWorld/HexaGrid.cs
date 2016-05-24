@@ -131,7 +131,7 @@ namespace HexaPuzzleWorld {
 		}
 
 		public Quaternion GetRotation(int step) {
-			return Quaternion.AngleAxis (30 + step * 60, Vector3.up);
+			return Quaternion.AngleAxis (30 + step * 60, transform.up);
 		}
 			
 		int N {
