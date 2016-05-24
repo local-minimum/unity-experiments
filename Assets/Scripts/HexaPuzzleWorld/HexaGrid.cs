@@ -105,7 +105,7 @@ namespace HexaPuzzleWorld {
 			}
 
 		}
-
+			
 		public HexaGridTile GetTile(int q, int r) {
 			int n = N;
 			return grid [r + n, q + n + Mathf.Min (0, r)];
@@ -118,11 +118,20 @@ namespace HexaPuzzleWorld {
 
 		public Vector3 GetPosition(int q, int r) {
 			int n = N;
-			return gridPos [r + n, q + n + Mathf.Min (0, r)];
+			try {
+				return gridPos [r + n, q + n + Mathf.Min (0, r)];
+			} catch (System.IndexOutOfRangeException) {
+				Debug.LogError ("Pos requested: " + q + ": " + r);
+				throw new System.IndexOutOfRangeException();
+			}
 		}
 
 		public Vector3 GetPosition(Hex hex) {
 			return GetPosition (hex.q, hex.r);
+		}
+
+		public Quaternion GetRotation(int step) {
+			return Quaternion.AngleAxis (30 + step * 60, Vector3.up);
 		}
 			
 		int N {
@@ -139,6 +148,9 @@ namespace HexaPuzzleWorld {
 
 		public Vector3 GetLocalGridPos(Hex hex) {
 			return GetLocalGridPos (hex.q, hex.r);
+		}
+		public Vector3 GetWorldGridPos(Hex hex) {
+			return transform.TransformPoint (GetLocalGridPos (hex.q, hex.r));
 		}
 
 		public Hex GetClosestHex(Vector3 worldPosition) {			
@@ -183,6 +195,18 @@ namespace HexaPuzzleWorld {
 			}
 		}
 
+		public Vector3 GetMouseProjection(float elevation) {			
+			Ray ray = Camera.main.ScreenPointToRay (Input.mousePosition);
+			Plane ground = new Plane (transform.up, transform.TransformPoint (Vector3.up * elevation));
+			float hitDist;
+			if (ground.Raycast (ray, out hitDist)) {
+				return ray.GetPoint (hitDist);
+			} else {
+				Debug.LogError ("Camera is not facing ground");
+				return Vector3.zero;
+			}
+		}
+
 		int CalculateGridSize() {
 			return 2 * rings + 1;
 		}
@@ -207,6 +231,10 @@ namespace HexaPuzzleWorld {
 			} catch (System.IndexOutOfRangeException) {
 				// Fail silently while updating
 			}
+		}
+
+		void Awake() {
+			SetupGrid ();
 		}
 	}
 }

@@ -64,7 +64,13 @@ namespace HexaPuzzleWorld {
 				}
 			}
 		}
+		public float TileHeight {
+			get {
+				return (GetHeight (TriType.Wall) - GetHeight (TriType.None)) * heightFactor;
+			}
 
+		}
+		
 		TriType GetTriType() {
 			float val = Random.value;
 			for (int i = 0; i < typeProbs.Length; i++) {
@@ -643,6 +649,12 @@ namespace HexaPuzzleWorld {
 					
 				return tris;
 			}
+		}
+
+		void Awake() {
+			mesh = null;
+			Reset ();
+			Generate ();
 		}
 	}
 }
