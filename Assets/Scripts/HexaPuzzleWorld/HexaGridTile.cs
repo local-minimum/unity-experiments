@@ -6,6 +6,20 @@ namespace HexaPuzzleWorld {
 	public class HexaGridTile : MonoBehaviour {
 
 		static HexaGridTile draggingTile;
+		static HexaGridTile hovered;
+
+		public static bool DraggingSomething {
+			get {
+				return draggingTile != null;
+			}
+		}
+
+		public static bool HoveringSomthing {
+			get {
+				return hovered != null;
+			}
+		}
+
 
 		[SerializeField] bool locked = false;
 		[SerializeField, HideInInspector] HexaTile tile;
@@ -13,25 +27,44 @@ namespace HexaPuzzleWorld {
 		[SerializeField] AnimationCurve rotoTransition;
 		[SerializeField, Range(0, 0.1f)] float rotationSpeed = 0.03f;
 		[SerializeField, Range(10, 20)] int rotationSteps = 10;
+		[SerializeField, Range(0, 2)] float snapDistance = 1;
 		public HexaGrid playingField;
 
-		bool hovering = false;
+		bool hovering {
+			get {
+				return hovered == this;
+			}
+		}
+
+		bool dragged {
+			get {
+				return draggingTile == this;
+			}
+		}
 
 		bool rotating = false;
-		static float rotationStep = 360 / 6;
 		int currentRotation = 0;
 
 		void Start() {
 			if (tile == null)
 				tile = GetComponent<HexaTile> ();
-
+			if (playingField == null)
+				playingField = GetComponentInParent<HexaGrid> ();
 			transform.rotation = playingField.GetRotation (currentRotation);
+		}			
+
+		public void SetDragging() {
+			if (draggingTile == null) {
+				draggingTile = this;				
+				hovered = this;
+			}
 		}
 
 		void Update() {
 			
 			if (Input.GetMouseButtonUp (0) && draggingTile == this) {
 				draggingTile = null;
+				hovered = null;
 			}
 
 			if (hovering && !locked && !rotating) {
@@ -56,18 +89,31 @@ namespace HexaPuzzleWorld {
 		}
 
 		void LateUpdate() {
-			if (draggingTile == this) {
+			if (dragged) {
 
-				float h = tile.TileHeight;
-				Vector3 pos = playingField.GetMouseProjection (h);
-				float d = playingField.GetDistanceToClosest (transform.position);
-				if (d / h < 2) {
-					var target = playingField.GetWorldGridPos (playingField.GetClosestHex (pos));
+				Vector3 groundPos = playingField.GetMouseProjection (0);
+				var hex = playingField.GetClosestHex (groundPos);
+
+				if (playingField.IsFree (hex) && playingField.GetDistanceToClosest (groundPos) < snapDistance) {					
+					var target = playingField.GetWorldGridPos (hex);
 					transform.position = Vector3.Lerp (transform.position, target, 0.5f);
 				} else {
-					transform.position = pos;
+					transform.position = playingField.GetMouseProjection (tile.TileHeight);
 				}
+			} else if (!locked) {
+				Vector3 groundPos = playingField.GetMouseProjection (0);
+				var hex = playingField.GetClosestHex (groundPos);
+				if (playingField.GetDistanceToClosest (groundPos) < snapDistance * 1.4f && playingField.Fits (this, hex)) {
+					playingField.SetTile (hex, this);
+				} else {
+					Destroy (gameObject);
+				}
+
 			}
+		}
+
+		public void Lock() {
+			locked = true;
 		}
 
 		IEnumerator<WaitForSeconds> animRotate(int newRot) {
@@ -82,15 +128,7 @@ namespace HexaPuzzleWorld {
 
 			rotating = false;
 		}
-
-		void OnMouseOver() {
-			hovering = true;	
-		}
-
-		void OnMouseExit() {
-			hovering = false;
-		}
-
+			
 		void OnDrawGizmosSelected() {
 			Gizmos.DrawRay (transform.position, transform.up * 3);
 		}

@@ -25,12 +25,18 @@ namespace HexaPuzzleWorld {
 		[SerializeField, HideInInspector] HexaGridTile[,] grid;
 		[SerializeField, HideInInspector] Vector3[,] gridPos;
 
+		[SerializeField] HexaGridTile tilePrefab;
+
 		public static Vector3 HexToCube(float q, float r) {
 			return new Vector3 (q, -q - r, r);
 		}
 
 		public static Vector3 HexToCube(Hex hex) {
 			return new Vector3 (hex.q, -hex.q - hex.r, hex.r);
+		}
+
+		public static Vector3 HexToCube(Vector2 hex) {
+			return new Vector3 (hex.x, -hex.x - hex.y, hex.y);
 		}
 
 		public static Hex CubeToHex(Vector3 cube) {
@@ -58,6 +64,10 @@ namespace HexaPuzzleWorld {
 
 		public static Hex RoundHex(float q, float r) {
 			return CubeToHex (RoundCube (HexToCube (q, r)));
+		}
+
+		public static Hex RoundHex(Vector2 hex) {
+			return CubeToHex (RoundCube (HexToCube (hex)));
 		}
 
 		public static int CubeDistance(Vector3 a, Vector3 b) {
@@ -108,18 +118,32 @@ namespace HexaPuzzleWorld {
 			
 		public HexaGridTile GetTile(int q, int r) {
 			int n = N;
-			return grid [r + n, q + n + Mathf.Min (0, r)];
+			return grid [q + n, r + n + Mathf.Min (0, q)];
 		}
 
-		public void SetTile(int q, int r, HexaGridTile tile) {
+		public bool IsFree(Hex hex) {
 			int n = N;
-			grid [r + n, q + n + Mathf.Min (0, r)] = tile;
+			return grid [hex.q + n, hex.r + n + Mathf.Min (0, hex.q)] == null;
+		}
+
+		public bool Fits(HexaGridTile tile, Hex hex) {
+			if (!IsFree (hex))
+				return false;
+
+			return true;
+		}
+
+		public void SetTile(Hex hex, HexaGridTile tile) {
+			int n = N;
+			grid [hex.q + n, hex.r + n + Mathf.Min (0, hex.q)] = tile;
+			tile.transform.localPosition = GetPosition (hex);
+			tile.Lock ();
 		}
 
 		public Vector3 GetPosition(int q, int r) {
 			int n = N;
 			try {
-				return gridPos [r + n, q + n + Mathf.Min (0, r)];
+				return gridPos [q + n, r + n + Mathf.Min (0, q)];
 			} catch (System.IndexOutOfRangeException) {
 				Debug.LogError ("Pos requested: " + q + ": " + r);
 				throw new System.IndexOutOfRangeException();
@@ -146,6 +170,12 @@ namespace HexaPuzzleWorld {
 			return new Vector3 (x, 0, z);
 		}
 
+		Vector2 GetHexPosition(Vector3 localPos) {
+			return new Vector2(
+				(localPos.x * Mathf.Sqrt (3) / 3f - localPos.z / 3f) / spacing,
+				localPos.z * 2f / 3f / spacing);
+		}
+
 		public Vector3 GetLocalGridPos(Hex hex) {
 			return GetLocalGridPos (hex.q, hex.r);
 		}
@@ -153,15 +183,38 @@ namespace HexaPuzzleWorld {
 			return transform.TransformPoint (GetLocalGridPos (hex.q, hex.r));
 		}
 
+		/*
 		public Hex GetClosestHex(Vector3 worldPosition) {			
 			var localPos = transform.InverseTransformPoint (worldPosition);
-			var cube = ClampCubeMagnitude(HexToCube(
-				(localPos.x * Mathf.Sqrt (3) / 3f - localPos.z / 3f) / spacing,
-				localPos.z * 2f / 3f / spacing), rings);
+			var cube = ClampCubeMagnitude(HexToCube(GetHexPosition(localPos)), rings);
 
 			return CubeToHex (RoundCube (cube));			
-		}
+		}*/
 
+		public Hex GetClosestHex(Vector3 worldPosition) {
+			var localPos = transform.InverseTransformPoint (worldPosition);
+			float closestSqDist = -1f;
+			int closestQ = 0;
+			int closestR = 0;
+
+			int n = N;
+			for (int q = -n; q < n + 1; q++) {
+				for (int r = -n; r < n + 1; r++) {
+					if (HexDistanceToCenter (q, r) > rings)
+						continue;
+				
+					float sqDist = Vector3.SqrMagnitude(localPos -  GetPosition(q, r));
+					if (sqDist < closestSqDist || closestSqDist < 0) {
+						closestQ = q;
+						closestR = r;
+						closestSqDist = sqDist;
+					}
+				}
+			}
+
+			return new Hex (closestQ, closestR);
+		}
+	
 		public float GetDistanceToClosest(Vector3 worldPosition) {
 			Hex closest = GetClosestHex (worldPosition);
 			return Vector3.Distance(worldPosition, transform.TransformPoint(GetPosition (closest)));
@@ -211,9 +264,13 @@ namespace HexaPuzzleWorld {
 			return 2 * rings + 1;
 		}
 
-		void OnDrawGizmosSelected() {
+		void OnDrawGizmosSelected() {			
 			Gizmos.color = Color.cyan;
-			Gizmos.DrawSphere (transform.position, spacing * 0.25f);
+			Vector3 mouseEnter = GetMouseProjection (0);
+			//Gizmos.DrawCube (transform.TransformPoint(GetLocalGridPos(RoundHex(GetHexPosition(transform.InverseTransformPoint(mouseEnter))))),  Vector3.one * spacing * 0.25f);
+			Gizmos.DrawCube(GetWorldGridPos(GetClosestHex(mouseEnter)), Vector3.one * spacing * 0.25f);
+			Gizmos.color = Color.magenta;
+			Gizmos.DrawWireCube(mouseEnter, Vector3.one * spacing * 0.4f);
 			if (grid == null || gridPos == null)
 				return;
 			int n = N;
@@ -235,6 +292,16 @@ namespace HexaPuzzleWorld {
 
 		void Awake() {
 			SetupGrid ();
+		}
+
+		void Update()  {
+			if (Input.GetMouseButtonDown (0) && !HexaGridTile.HoveringSomthing) {
+				var hgt = Instantiate (tilePrefab);
+				hgt.playingField = this;
+				hgt.transform.SetParent (transform);
+				hgt.transform.localPosition = transform.TransformPoint(GetMouseProjection (0));
+				hgt.SetDragging ();
+			}
 		}
 	}
 }
