@@ -6,6 +6,37 @@ namespace HexaPuzzleWorld {
 	public enum TriType {None, Abyss, Ground, Wall};
 	public enum Directions {N, NE, SE, S, SW, NW};
 
+	public static class DirectionsExtensions {
+		public static Directions Opposing (this Directions direction) {
+			switch (direction) {
+			case Directions.N:
+				return Directions.S;
+			case Directions.NE:
+				return Directions.SW;
+			case Directions.NW:
+				return Directions.SE;
+			case Directions.S:
+				return Directions.N;
+			case Directions.SE:
+				return Directions.NW;
+			case Directions.SW:
+				return Directions.NE;
+			default:
+				return direction;
+			}
+		}
+
+		public static Directions Rotate(this Directions dir, int steps) {
+			Directions[] vals = (Directions[]) System.Enum.GetValues (typeof(Directions));
+			int pos;
+			for (pos = 0; pos < vals.Length; pos++) {
+				if (vals [pos] == dir)
+					break;
+			}
+			return vals [(pos + steps + vals.Length) % vals.Length];
+		}
+	}
+
 	public class HexaTile : MonoBehaviour {
 
 		[SerializeField, Range(1, 6)] int meshSubdivisionLvl = 1;
@@ -48,6 +79,10 @@ namespace HexaPuzzleWorld {
 			EnsureEdges ();
 		}
 
+		public bool HasBridge(Directions dir) {
+			return openExits.Contains (dir);
+		}
+
 		void InitTris() {
 			int rows = Rows;
 			int maxCols = MaxCols;
@@ -64,6 +99,7 @@ namespace HexaPuzzleWorld {
 				}
 			}
 		}
+
 		public float TileHeight {
 			get {
 				return (GetHeight (TriType.Wall) - GetHeight (TriType.None)) * heightFactor;

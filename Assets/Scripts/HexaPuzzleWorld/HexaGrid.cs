@@ -15,6 +15,62 @@ namespace HexaPuzzleWorld {
 		public static Hex ClampMagnitude(Hex hex, int magnitude) {
 			return new Hex (Mathf.Clamp (hex.q, -magnitude, magnitude), Mathf.Clamp (hex.r, -magnitude, magnitude));
 		}
+
+		public Hex N {
+			get {
+				return new Hex (q - 1, r);
+			}
+		}
+
+		public Hex S {
+
+			get {
+				return new Hex (q + 1, r);
+			}
+		}
+
+		public Hex NW {
+			get {
+				return new Hex (q - 1, r + 1);
+			}				
+		}
+
+		public Hex SW {
+			get {
+				return new Hex (q, r + 1);
+			}
+		}
+
+		public Hex SE {
+			get {
+				return new Hex (q + 1, r - 1);
+			}
+		}
+
+		public Hex NE {
+			get {
+				return new Hex (q, r - 1);
+			}
+		}
+
+		public Hex GetNeighbour(Directions direction) {
+			switch (direction) {
+			case Directions.N:
+				return N;
+			case Directions.NE:
+				return NE;
+			case Directions.NW:
+				return NW;
+			case Directions.S:
+				return S;
+			case Directions.SE:
+				return SE;
+			case Directions.SW:
+				return SW;
+			default:
+				return this;
+			}
+		}
 	}
 
 	public class HexaGrid : MonoBehaviour {
@@ -122,6 +178,9 @@ namespace HexaPuzzleWorld {
 		}
 
 		public bool IsFree(Hex hex) {
+			if (HexDistanceToCenter (hex) > rings)
+				return false;
+			
 			int n = N;
 			return grid [hex.q + n, hex.r + n + Mathf.Min (0, hex.q)] == null;
 		}
@@ -130,9 +189,22 @@ namespace HexaPuzzleWorld {
 			if (!IsFree (hex))
 				return false;
 
+			foreach (Directions d in System.Enum.GetValues(typeof(Directions))) {
+				var other = GetTile (hex.GetNeighbour(d));
+				Debug.Log (other);
+				if (other && other.HasBridge (d.Opposing()) != tile.HasBridge (d))
+					return false;
+			}
+			
 			return true;
 		}
 
+		public HexaGridTile GetTile(Hex hex) {
+			if (HexDistanceToCenter (hex) > rings)
+				return null;
+			int n = N;
+			return grid [hex.q + n, hex.r + n + Mathf.Min (0, hex.q)];
+		}
 		public void SetTile(Hex hex, HexaGridTile tile) {
 			int n = N;
 			grid [hex.q + n, hex.r + n + Mathf.Min (0, hex.q)] = tile;

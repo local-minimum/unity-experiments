@@ -41,6 +41,10 @@ namespace HexaPuzzleWorld {
 				return draggingTile == this;
 			}
 		}
+			
+		public bool HasBridge(Directions direction) {
+			return tile.HasBridge(direction.Rotate(currentRotation));
+		}
 
 		bool rotating = false;
 		int currentRotation = 0;
