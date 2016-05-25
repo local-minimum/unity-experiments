@@ -35,6 +35,28 @@ namespace HexaPuzzleWorld {
 			}
 			return vals [(pos + steps + vals.Length) % vals.Length];
 		}
+
+		static float a = Mathf.Sqrt (3) / 2f;
+		static float b = 1 / 2f;
+
+		public static Vector3 FlatTopToVector(this Directions dir) {
+			switch (dir) {
+			case Directions.N:
+				return Vector3.forward;
+			case Directions.NE:
+				return new Vector3 (a, 0, b);
+			case Directions.NW:
+				return new Vector3 (-a, 0f, b);
+			case Directions.S:
+				return Vector3.forward * -1;
+			case Directions.SE:
+				return new Vector3 (a, 0, -b);
+			case Directions.SW:
+				return new Vector3 (-a, 0, -b);
+			default:
+				return Vector3.zero;
+			}
+		}
 	}
 
 	public class HexaTile : MonoBehaviour {
@@ -234,7 +256,7 @@ namespace HexaPuzzleWorld {
 
 					if (gate > gateOffset / 2 && gate < gateSize) {
 						
-						if (row == 0)
+						if (IsEdgeLocalN(row))
 							openExits.Add (Directions.N);
 						else
 							openExits.Add (Directions.S);
@@ -242,6 +264,7 @@ namespace HexaPuzzleWorld {
 						for (int offset = -gateOffset; offset <= gateOffset; offset++) {
 							triGrid [row, outerColStart + midPt - offset] = TriType.Ground;
 						}
+
 					} else {
 						//Debug.Log ("Clearing gate " + row);
 						for (int offset = -gateOffset; offset <= gateOffset; offset++) {
@@ -278,13 +301,13 @@ namespace HexaPuzzleWorld {
 			}
 
 			if (sideGates [0] > rowGateOffsets)
-				openExits.Add (Directions.NW);
-			if (sideGates [1] > rowGateOffsets)
-				openExits.Add (Directions.NE);
-			if (sideGates [2] > rowGateOffsets)
 				openExits.Add (Directions.SW);
-			if (sideGates [3] > rowGateOffsets)
+			if (sideGates [1] > rowGateOffsets)
 				openExits.Add (Directions.SE);
+			if (sideGates [2] > rowGateOffsets)
+				openExits.Add (Directions.NW);
+			if (sideGates [3] > rowGateOffsets)
+				openExits.Add (Directions.NE);
 
 
 			for (int row = 0; row < rows; row++) {
@@ -409,7 +432,7 @@ namespace HexaPuzzleWorld {
 								wallNorms.Add (Vector3.left);
 						}
 
-						if (IsEdgeS(row)) {
+						if (IsEdgeLocalN(row)) {
 
 							xtraVerts.Add (new Vector3 (x + step, rimHeight, z + step * zFactor));
 							xtraLvls.Add (TriType.None);
@@ -429,7 +452,7 @@ namespace HexaPuzzleWorld {
 								wallNorms.Add (Vector3.back);
 						}
 
-						if (IsEdgeNW (row, col)) {
+						if (IsEdgeLocalSW (row, col)) {
 
 							xtraVerts.Add (new Vector3 (x - step, rimHeight, z + step * zFactor));
 							xtraLvls.Add (TriType.None);
@@ -451,7 +474,7 @@ namespace HexaPuzzleWorld {
 
 						}
 							
-						if (IsEdgeNE (row, col)) {
+						if (IsEdgeLocalSE (row, col)) {
 
 							xtraVerts.Add (new Vector3 (x + step, rimHeight, z + step * zFactor));
 							xtraLvls.Add (TriType.None);
@@ -522,7 +545,7 @@ namespace HexaPuzzleWorld {
 							
 						}
 
-						if (IsEdgeN(row)) {
+						if (IsEdgeLocalS(row)) {
 
 							xtraVerts.Add (new Vector3 (x + step, rimHeight, z - step * zFactor));
 							xtraLvls.Add (TriType.None);
@@ -542,7 +565,7 @@ namespace HexaPuzzleWorld {
 								wallNorms.Add (Vector3.forward);
 						}
 
-						if (IsEdgeSE (row, col)) {
+						if (IsEdgeLocalNE (row, col) && false) {
 							
 							xtraVerts.Add (new Vector3 (x + step, rimHeight, z - step * zFactor));
 							xtraLvls.Add (TriType.None);
@@ -562,7 +585,7 @@ namespace HexaPuzzleWorld {
 								wallNorms.Add (Vector3.forward);
 						}
 
-						if (IsEdgeSW (row, col)) {
+						if (IsEdgeLocalNW (row, col)) {
 
 							xtraVerts.Add (new Vector3 (x - step, rimHeight, z - step * zFactor));
 							xtraLvls.Add (TriType.None);
@@ -595,27 +618,27 @@ namespace HexaPuzzleWorld {
 			return allVerts;
 		}
 
-		bool IsEdgeN(int row) {
+		bool IsEdgeLocalS(int row) {
 			return row == 0;
 		}
 
-		bool IsEdgeNW(int row, int col) {
+		bool IsEdgeLocalSW(int row, int col) {
 			return (Rows / 2 - 1) - row == col;
 		}
 
-		bool IsEdgeSW(int row, int col) {
+		bool IsEdgeLocalNW(int row, int col) {
 			return row - Rows / 2 == col;
 		}
 
-		bool IsEdgeS(int row) {
+		bool IsEdgeLocalN(int row) {
 			return row == Rows - 1;
 		}
 
-		bool IsEdgeSE(int row, int col) {
+		bool IsEdgeLocalNE(int row, int col) {
 			return row - (Rows / 2 - 1) == MaxCols - col;
 		}
 
-		bool IsEdgeNE(int row, int col) {
+		bool IsEdgeLocalSE(int row, int col) {
 			return Rows / 2 - row == MaxCols - col;
 		}
 			
@@ -691,6 +714,17 @@ namespace HexaPuzzleWorld {
 			mesh = null;
 			Reset ();
 			Generate ();
+		}
+
+		void OnDrawGizmosSelected() {
+			foreach (Directions d in System.Enum.GetValues(typeof(Directions))) {
+				bool bridged = HasBridge (d);
+				Gizmos.color = bridged ? Color.white : Color.red;
+				if (bridged)
+					Gizmos.DrawWireCube (transform.TransformPoint (d.FlatTopToVector () * size), Vector3.one * 0.5f);
+				else
+					Gizmos.DrawWireSphere (transform.TransformPoint (d.FlatTopToVector () * size), 0.5f);
+			}
 		}
 	}
 }

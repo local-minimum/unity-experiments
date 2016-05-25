@@ -43,7 +43,7 @@ namespace HexaPuzzleWorld {
 		}
 			
 		public bool HasBridge(Directions direction) {
-			return tile.HasBridge(direction.Rotate(currentRotation));
+			return tile.HasBridge(direction.Rotate(-currentRotation));
 		}
 
 		bool rotating = false;
