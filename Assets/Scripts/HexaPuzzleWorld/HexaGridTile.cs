@@ -29,6 +29,7 @@ namespace HexaPuzzleWorld {
 		[SerializeField, Range(10, 20)] int rotationSteps = 10;
 		[SerializeField, Range(0, 2)] float snapDistance = 1;
 		public HexaGrid playingField;
+		private Hex playingFieldPosition;
 
 		bool hovering {
 			get {
@@ -108,7 +109,9 @@ namespace HexaPuzzleWorld {
 				Vector3 groundPos = playingField.GetMouseProjection (0);
 				var hex = playingField.GetClosestHex (groundPos);
 				if (playingField.GetDistanceToClosest (groundPos) < snapDistance * 1.4f && playingField.Fits (this, hex)) {
-					playingField.SetTile (hex, this);
+					if (playingField.SetTile (hex, this)) {
+						playingFieldPosition = hex;
+					}
 				} else {
 					Destroy (gameObject);
 				}
@@ -118,6 +121,7 @@ namespace HexaPuzzleWorld {
 
 		public void Lock() {
 			locked = true;
+			tile.Locked = true;
 		}
 
 		IEnumerator<WaitForSeconds> animRotate(int newRot) {
@@ -134,7 +138,15 @@ namespace HexaPuzzleWorld {
 		}
 			
 		void OnDrawGizmosSelected() {
-			Gizmos.DrawRay (transform.position, transform.up * 3);
+			if (locked) {
+				foreach (Directions dir in System.Enum.GetValues(typeof(Directions))) {
+					var neighbour = playingField.GetTile (playingFieldPosition.GetNeighbour (dir));
+					if (neighbour) {
+						Gizmos.color = HasBridge (dir) ? Color.cyan : Color.magenta;
+						Gizmos.DrawCube(Vector3.Lerp(transform.position, neighbour.transform.position, 0.4f), Vector3.one * 0.4f);
+					}
+				}
+			}
 		}
 	}
 }

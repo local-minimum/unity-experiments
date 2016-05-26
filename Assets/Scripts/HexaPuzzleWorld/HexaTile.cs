@@ -6,6 +6,7 @@ namespace HexaPuzzleWorld {
 	public enum TriType {None, Abyss, Ground, Wall};
 	public enum Directions {N, NE, SE, S, SW, NW};
 
+
 	public static class DirectionsExtensions {
 		public static Directions Opposing (this Directions direction) {
 			switch (direction) {
@@ -71,6 +72,17 @@ namespace HexaPuzzleWorld {
 		[SerializeField, HideInInspector] TriType[,]  triGrid;
 		[SerializeField, HideInInspector] List<Directions> openExits;
 
+		bool locked = false;
+
+		public bool Locked {
+			get {
+				return locked;
+			}
+
+			set {
+				locked = value;
+			}
+		}
 		void Reset() {
 			var rend = GetComponent<MeshRenderer> ();
 			if (rend == null) {
@@ -88,6 +100,10 @@ namespace HexaPuzzleWorld {
 		}
 
 		public void Generate() {
+			if (locked) {
+				Debug.LogWarning ("Tried to generate new landscape for locked tile");
+				return;
+			}
 			GenerateTris ();
 			GenerateMesh ();
 		}
@@ -717,13 +733,16 @@ namespace HexaPuzzleWorld {
 		}
 
 		void OnDrawGizmosSelected() {
-			foreach (Directions d in System.Enum.GetValues(typeof(Directions))) {
-				bool bridged = HasBridge (d);
-				Gizmos.color = bridged ? Color.white : Color.red;
-				if (bridged)
-					Gizmos.DrawWireCube (transform.TransformPoint (d.FlatTopToVector () * size), Vector3.one * 0.5f);
-				else
-					Gizmos.DrawWireSphere (transform.TransformPoint (d.FlatTopToVector () * size), 0.5f);
+			if (locked) {
+				foreach (Directions d in System.Enum.GetValues(typeof(Directions))) {
+					bool bridged = HasBridge (d);
+
+					Gizmos.color = bridged ? Color.white : Color.red;
+					if (bridged)
+						Gizmos.DrawWireCube (transform.TransformPoint (d.FlatTopToVector () * size), Vector3.one * 0.5f);
+					else
+						Gizmos.DrawWireSphere (transform.TransformPoint (d.FlatTopToVector () * size), 0.5f);
+				}
 			}
 		}
 	}

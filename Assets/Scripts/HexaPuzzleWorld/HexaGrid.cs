@@ -16,13 +16,13 @@ namespace HexaPuzzleWorld {
 			return new Hex (Mathf.Clamp (hex.q, -magnitude, magnitude), Mathf.Clamp (hex.r, -magnitude, magnitude));
 		}
 
-		public Hex N {
+		public Hex SW {
 			get {
 				return new Hex (q - 1, r);
 			}
 		}
 
-		public Hex S {
+		public Hex NE {
 
 			get {
 				return new Hex (q + 1, r);
@@ -35,7 +35,7 @@ namespace HexaPuzzleWorld {
 			}				
 		}
 
-		public Hex SW {
+		public Hex N {
 			get {
 				return new Hex (q, r + 1);
 			}
@@ -47,7 +47,7 @@ namespace HexaPuzzleWorld {
 			}
 		}
 
-		public Hex NE {
+		public Hex S {
 			get {
 				return new Hex (q, r - 1);
 			}
@@ -198,18 +198,19 @@ namespace HexaPuzzleWorld {
 			
 			return true;
 		}
-
+			
 		public HexaGridTile GetTile(Hex hex) {
 			if (HexDistanceToCenter (hex) > rings)
 				return null;
 			int n = N;
 			return grid [hex.q + n, hex.r + n + Mathf.Min (0, hex.q)];
 		}
-		public void SetTile(Hex hex, HexaGridTile tile) {
+		public bool SetTile(Hex hex, HexaGridTile tile) {
 			int n = N;
 			grid [hex.q + n, hex.r + n + Mathf.Min (0, hex.q)] = tile;
 			tile.transform.localPosition = GetPosition (hex);
 			tile.Lock ();
+			return true;
 		}
 
 		public Vector3 GetPosition(int q, int r) {
