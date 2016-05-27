@@ -100,6 +100,9 @@ namespace HexaPuzzleWorld {
 		}
 
 		public void Generate() {
+			var mc = GetComponent<MeshCollider> ();
+			if (mc && mc.sharedMesh == null)
+				mc.sharedMesh = mesh;
 			if (locked) {
 				Debug.LogWarning ("Tried to generate new landscape for locked tile");
 				return;
@@ -581,7 +584,7 @@ namespace HexaPuzzleWorld {
 								wallNorms.Add (Vector3.forward);
 						}
 
-						if (IsEdgeLocalNE (row, col) && false) {
+						if (IsEdgeLocalNE (row, col)) {
 							
 							xtraVerts.Add (new Vector3 (x + step, rimHeight, z - step * zFactor));
 							xtraLvls.Add (TriType.None);
