@@ -28,10 +28,10 @@ namespace TetrahedronCharacter {
 			Vector3 origin = bone.position;
 			Vector3 scale = bone.scale;
 
-			Vector3 A = new Vector3 (-cosVal * scale.x, 0, -0.5f * scale.z) + origin;
-			Vector3 B = Vector3.forward * scale.z + origin;
-			Vector3 C = Vector3.up * scale.y + origin;
-			Vector3 D = new Vector3 (cosVal * scale.x, 0, -0.5f * scale.z) + origin;
+			Vector3 A = bone.rotation * new Vector3 (-cosVal * scale.x, 0, -0.5f * scale.z) + origin;
+			Vector3 B = bone.rotation * Vector3.forward * scale.z + origin;
+			Vector3 C = bone.rotation * Vector3.up * scale.y + origin;
+			Vector3 D = bone.rotation * new Vector3 (cosVal * scale.x, 0, -0.5f * scale.z) + origin;
 
 			return new Vector3[] {
 				A, B, C,
@@ -94,11 +94,12 @@ namespace TetrahedronCharacter {
 		Vector2[] GetUV(int boneCont) {
 			
 			Vector2[] uv = new Vector2[boneCont * 12];
+			Vector2 mid = new Vector2 (0.5f, 1f);
 			for (int i = 0; i < boneCont; i++) {
 				for (int j = 0; j < 4; j++) {
-					uv [i * 12 + j * 3] = Vector2.right + Vector2.down;
-					uv [i * 12 + j * 3 + 1] = Vector2.left + Vector2.down;
-					uv [i * 12 + j * 3 + 2] = Vector2.up;
+					uv [i * 12 + j * 3] = Vector2.right;
+					uv [i * 12 + j * 3 + 1] = Vector2.zero;
+					uv [i * 12 + j * 3 + 2] = mid;
 				}
 			}
 			return uv;
@@ -110,7 +111,12 @@ namespace TetrahedronCharacter {
 				mesh.name = "TetraBones";
 			}
 			GetComponent<MeshFilter> ().sharedMesh = mesh;
-			GetComponent<MeshCollider> ().sharedMesh = mesh;
+			var col = GetComponent<MeshCollider> ();
+			if (col.sharedMesh != mesh)
+				col.sharedMesh = mesh;
+			col.convex = false;
+			col.convex = true;
+
 		}
 
 		void Update() {
