@@ -19,6 +19,8 @@ namespace TetrahedronCharacter {
 		void Awake() {
 			if (bone == null)
 				bone = GetComponent<TetraBones> ();
+
+			lastGround = -2 * groundingGrazePeriod;
 		}
 
 		public bool Grounded {
@@ -27,13 +29,15 @@ namespace TetrahedronCharacter {
 			}
 
 			private set {
-				lastGround = Time.timeSinceLevelLoad;
+				if (value == true)
+					lastGround = Time.timeSinceLevelLoad;
 			}
 		}
 
 		public void ApplyForce(Vector3 direction) {
 			Vector3 pos = Vector3.Lerp (bone.BoneTipPosition (0), bone.BoneBaseCenterPosition (0), forcePlace);
 			rb.AddForceAtPosition (direction * (Grounded ? 1f : ungroundedFactor) * muscleStrength, pos, ForceMode.Impulse);
+
 		}
 
 		public void OnCollisionStay(Collision col) {
@@ -44,6 +48,8 @@ namespace TetrahedronCharacter {
 					if ((contacts [i].point - tipPos).sqrMagnitude < maxSqDistContactToTip) {
 						Grounded = true;
 						return;
+					} else {
+						Debug.Log ((contacts [i].point - tipPos).sqrMagnitude);
 					}
 				}
 			}
