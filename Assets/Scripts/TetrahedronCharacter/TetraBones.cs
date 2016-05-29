@@ -17,9 +17,11 @@ namespace TetrahedronCharacter {
 
 		public Bone[] bones;
 
+		private Vector3[] boneTips;
+
 		static float cosVal = Mathf.Sqrt (3) / 2;
 		Vector3[] verts = new Vector3[0];
-		Mesh mesh;
+		[SerializeField] Mesh mesh;
 
 		Vector3[] TetraHedronVertices(int idBone) {
 			
@@ -48,6 +50,14 @@ namespace TetrahedronCharacter {
 		public void Generate() {
 			Awake ();
 			RenderMesh ();
+		}
+
+		public Vector3 BoneTipPosition(int bone) {
+			return transform.TransformPoint (verts [bone * 12 + 2]);
+		}
+
+		public Vector3 BoneBaseCenterPosition(int bone) {
+			return transform.TransformPoint (bones [bone].position);
 		}
 
 		int ActiveBones {
@@ -110,12 +120,14 @@ namespace TetrahedronCharacter {
 				mesh = new Mesh ();
 				mesh.name = "TetraBones";
 			}
-			GetComponent<MeshFilter> ().sharedMesh = mesh;
+			var mf = GetComponent<MeshFilter> ();
+			if (mf.sharedMesh != mesh)
+				mf.sharedMesh = mesh;
 			var col = GetComponent<MeshCollider> ();
 			if (col.sharedMesh != mesh)
 				col.sharedMesh = mesh;
-			col.convex = false;
-			col.convex = true;
+			//col.convex = false;
+			//col.convex = true;
 
 		}
 
