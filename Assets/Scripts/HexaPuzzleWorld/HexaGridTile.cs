@@ -18,7 +18,17 @@ namespace HexaPuzzleWorld {
 			get {
 				return hovered != null;
 			}
+
+			set {
+				if (value) {
+					Debug.LogError ("Can't set hovering unknonw entity");
+				} else {
+					hovered = null;
+				}
+					
+			}
 		}
+
 
 
 		[SerializeField] bool locked = false;
@@ -29,11 +39,18 @@ namespace HexaPuzzleWorld {
 		[SerializeField, Range(10, 20)] int rotationSteps = 10;
 		[SerializeField, Range(0, 2)] float snapDistance = 1;
 		public HexaGrid playingField;
-		private Hex playingFieldPosition;
+		private Hex playingFieldPosition = Hex.Invalid;
 
-		bool hovering {
+		public bool hovering {
 			get {
 				return hovered == this;
+			}
+
+			set {
+				if (value)
+					hovered = this;
+				else if (hovered == this)
+					hovered = null;
 			}
 		}
 
@@ -69,7 +86,15 @@ namespace HexaPuzzleWorld {
 			
 			if (Input.GetMouseButtonUp (0) && draggingTile == this) {
 				draggingTile = null;
-				hovered = null;
+				Vector3 groundPos = playingField.GetMouseProjection (0);
+				var hex = playingField.GetClosestHex (groundPos);
+				if (playingField.GetDistanceToClosest (groundPos) < snapDistance * 1.4f && playingField.Fits (this, hex)) {
+					if (playingField.SetTile (hex, this)) {
+						playingFieldPosition = hex;
+					}
+				} else {
+					Destroy (gameObject);
+				}
 			}
 
 			if (hovering && !locked && !rotating) {
@@ -78,7 +103,7 @@ namespace HexaPuzzleWorld {
 					draggingTile = this;
 				}
 
-				if (draggingTile == this || draggingTile == null) {
+				if (hovering) {
 					var roto = Input.GetAxis ("Rotate");
 					if (roto > rotoThreshold) {
 						StartCoroutine (animRotate (currentRotation + 1));
@@ -103,20 +128,13 @@ namespace HexaPuzzleWorld {
 					var target = playingField.GetWorldGridPos (hex);
 					transform.position = Vector3.Lerp (transform.position, target, 0.5f);
 				} else {
-					transform.position = playingField.GetMouseProjection (tile.TileHeight);
-				}
-			} else if (!locked) {
-				Vector3 groundPos = playingField.GetMouseProjection (0);
-				var hex = playingField.GetClosestHex (groundPos);
-				if (playingField.GetDistanceToClosest (groundPos) < snapDistance * 1.4f && playingField.Fits (this, hex)) {
-					if (playingField.SetTile (hex, this)) {
-						playingFieldPosition = hex;
+					if (playingFieldPosition != Hex.Invalid) {
+						playingField.SetTile (playingFieldPosition, null);
+						playingFieldPosition = Hex.Invalid;
 					}
-				} else {
-					Destroy (gameObject);
+					transform.position = playingField.GetMouseProjection (-3 * tile.TileHeight);
 				}
-
-			}
+			} 
 		}
 
 		public void Lock() {
@@ -147,6 +165,15 @@ namespace HexaPuzzleWorld {
 					}
 				}
 			}
+		}
+
+		void OnMouseEnter() {
+			hovering = true;
+		}
+
+		void OnMouseExit() {
+			if (hovering)
+				hovering = false;
 		}
 	}
 }

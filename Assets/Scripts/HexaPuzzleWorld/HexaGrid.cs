@@ -4,6 +4,8 @@ using System.Collections;
 namespace HexaPuzzleWorld {
 
 	public struct Hex {
+
+		private static Hex _invalid = new Hex (-99999, -99999);
 		public int q;
 		public int r;
 
@@ -71,13 +73,36 @@ namespace HexaPuzzleWorld {
 				return this;
 			}
 		}
+
+		public static Hex Invalid {
+			get {
+				return _invalid;
+			}
+		}
+
+		public override bool Equals(object obj) {
+			return obj is Hex && this == (Hex)obj;
+		}
+
+		public override int GetHashCode() {
+			return q.GetHashCode () ^ r.GetHashCode ();
+		}
+
+		public static bool operator ==(Hex a, Hex b) {
+			return a.q == b.q && a.r == b.r;
+		}
+
+		public static bool operator !=(Hex a, Hex b) {
+			return a.q != b.q || a.r != b.r;
+		}
 	}
 
 	public class HexaGrid : MonoBehaviour {
 
 		[SerializeField, Range(1, 50)] int rings;
 		[SerializeField, Range(0, 2)] float spacing;
-
+		[SerializeField] bool everythingFits = false;
+		[SerializeField] bool lockOnPlace = true;
 		[SerializeField, HideInInspector] HexaGridTile[,] grid;
 		[SerializeField, HideInInspector] Vector3[,] gridPos;
 
@@ -188,7 +213,8 @@ namespace HexaPuzzleWorld {
 		public bool Fits(HexaGridTile tile, Hex hex) {
 			if (!IsFree (hex))
 				return false;
-
+			if (everythingFits)
+				return true;
 			foreach (Directions d in System.Enum.GetValues(typeof(Directions))) {
 				var other = GetTile (hex.GetNeighbour(d));
 				Debug.Log (other);
@@ -208,8 +234,12 @@ namespace HexaPuzzleWorld {
 		public bool SetTile(Hex hex, HexaGridTile tile) {
 			int n = N;
 			grid [hex.q + n, hex.r + n + Mathf.Min (0, hex.q)] = tile;
-			tile.transform.localPosition = GetPosition (hex);
-			tile.Lock ();
+			if (tile != null) {
+				tile.transform.localPosition = GetPosition (hex);
+				if (lockOnPlace)
+					tile.Lock ();
+				tile.gameObject.layer = gameObject.layer;
+			}
 			return true;
 		}
 
