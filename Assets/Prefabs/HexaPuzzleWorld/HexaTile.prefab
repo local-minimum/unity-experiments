@@ -141,7 +141,7 @@ MonoBehaviour:
     m_RotationOrder: 0
   rotationSpeed: 0.014
   rotationSteps: 20
-  snapDistance: 0.8
+  snapDistance: 0.6
   playingField: {fileID: 0}
 --- !u!1001 &100100000
 Prefab:

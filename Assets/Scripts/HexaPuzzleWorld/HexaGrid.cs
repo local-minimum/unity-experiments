@@ -1,5 +1,5 @@
 ﻿using UnityEngine;
-using System.Collections;
+using System.Collections.Generic;
 
 namespace HexaPuzzleWorld {
 
@@ -97,6 +97,8 @@ namespace HexaPuzzleWorld {
 		}
 	}
 
+	public delegate void GridChange();
+
 	public class HexaGrid : MonoBehaviour {
 
 		[SerializeField, Range(1, 50)] int rings;
@@ -107,6 +109,8 @@ namespace HexaPuzzleWorld {
 		[SerializeField, HideInInspector] Vector3[,] gridPos;
 
 		[SerializeField] HexaGridTile tilePrefab;
+
+		public event GridChange OnGridChange;
 
 		public static Vector3 HexToCube(float q, float r) {
 			return new Vector3 (q, -q - r, r);
@@ -195,11 +199,30 @@ namespace HexaPuzzleWorld {
 				}
 			}
 
+			if (OnGridChange != null)
+				OnGridChange ();
+
 		}
-			
+
+		public bool Setup {
+			get {
+				return grid != null;
+			}
+		}
+
+		public bool IsInsideGrid(Hex hex) {
+			return HexDistanceToCenter (hex) <= rings;
+		}
+
 		public HexaGridTile GetTile(int q, int r) {
 			int n = N;
 			return grid [q + n, r + n + Mathf.Min (0, q)];
+		}
+
+		public float Spacing {
+			get {
+				return spacing;
+			}
 		}
 
 		public bool IsFree(Hex hex) {
@@ -231,6 +254,7 @@ namespace HexaPuzzleWorld {
 			int n = N;
 			return grid [hex.q + n, hex.r + n + Mathf.Min (0, hex.q)];
 		}
+
 		public bool SetTile(Hex hex, HexaGridTile tile) {
 			int n = N;
 			grid [hex.q + n, hex.r + n + Mathf.Min (0, hex.q)] = tile;
@@ -241,6 +265,16 @@ namespace HexaPuzzleWorld {
 				tile.gameObject.layer = gameObject.layer;
 			}
 			return true;
+		}
+		public IEnumerable<Hex> EnumerateHexes() {
+			int n = N;
+			for (int q = -n; q < n + 1; q++) {
+				for (int r = -n; r < n + 1; r++) {
+					if (HexDistanceToCenter (q, r) > rings)
+						continue;
+					yield return new Hex (q, r);
+				}
+			}
 		}
 
 		public Vector3 GetPosition(int q, int r) {

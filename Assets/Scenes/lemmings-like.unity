@@ -233,18 +233,6 @@ Prefab:
       propertyPath: m_RootOrder
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 11458984, guid: e3823569ee35b9143b9a08dad9514bfa, type: 2}
-      propertyPath: everythingFits
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 171580, guid: e3823569ee35b9143b9a08dad9514bfa, type: 2}
-      propertyPath: m_Layer
-      value: 8
-      objectReference: {fileID: 0}
-    - target: {fileID: 11458984, guid: e3823569ee35b9143b9a08dad9514bfa, type: 2}
-      propertyPath: lockOnPlace
-      value: 0
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: e3823569ee35b9143b9a08dad9514bfa, type: 2}
   m_IsPrefabParent: 0
