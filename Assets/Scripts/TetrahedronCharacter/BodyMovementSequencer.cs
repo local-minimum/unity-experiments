@@ -65,7 +65,7 @@ namespace TetrahedronCharacter {
 			if (targetTransform)
 				direction = (targetTransform.position - transform.position).normalized + Vector3.up * jumpyness;
 			else
-				direction = Vector3.up * jumpyness;
+				direction = transform.forward + Vector3.up * jumpyness;
 
 			direction *= forceModifier;
 

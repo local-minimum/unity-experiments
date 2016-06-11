@@ -8,10 +8,10 @@ namespace HexaPuzzleWorld {
 		[SerializeField] HexaGrid playingField;
 
 		[SerializeField, Range(-5,5)] float ridgeElevation;
-		[SerializeField, Range(0, 1)] float ridgeWidth;
+		[SerializeField, Range(0, 2)] float ridgeWidth;
 		[SerializeField, Range(0, 10)] float outerBuffer;
 		[SerializeField, Range(0, 1)] float height;
-		[SerializeField, Range(0, 2)] float spacing;
+		[SerializeField, Range(0, 15)] float spacing;
 
 		static Quaternion rotA = Quaternion.Euler (0, 60, 0);
 		static Quaternion rotB = Quaternion.Euler (0, 0, 0);

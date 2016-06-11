@@ -6,7 +6,7 @@ namespace HexaPuzzleWorld {
 	public class HexaCam : MonoBehaviour {
 
 		[SerializeField] HexaGrid playingField;
-		[SerializeField, Range(0, 40)] float distance = 10;
+		[SerializeField, Range(0, 200)] float distance = 10;
 		[SerializeField] LayerMask rayHitLayerMask;
 
 		Camera cam;

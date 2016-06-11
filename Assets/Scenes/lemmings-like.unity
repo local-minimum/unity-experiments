@@ -41,7 +41,7 @@ RenderSettings:
 LightmapSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 6
-  m_GIWorkflowMode: 1
+  m_GIWorkflowMode: 0
   m_LightmapsMode: 1
   m_GISettings:
     serializedVersion: 2
@@ -85,6 +85,22 @@ NavMeshSettings:
     cellSize: 0.16666667
     manualCellSize: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &34407242 stripped
+GameObject:
+  m_PrefabParentObject: {fileID: 171580, guid: e3823569ee35b9143b9a08dad9514bfa, type: 2}
+  m_PrefabInternal: {fileID: 821073396}
+--- !u!64 &34407246
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 34407242}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Convex: 0
+  m_Mesh: {fileID: 0}
 --- !u!1 &417168857
 GameObject:
   m_ObjectHideFlags: 0
@@ -184,7 +200,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   playingField: {fileID: 604901743}
-  distance: 14
+  distance: 100
   rayHitLayerMask:
     serializedVersion: 2
     m_Bits: 256
@@ -232,6 +248,26 @@ Prefab:
     - target: {fileID: 449584, guid: e3823569ee35b9143b9a08dad9514bfa, type: 2}
       propertyPath: m_RootOrder
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 449584, guid: e3823569ee35b9143b9a08dad9514bfa, type: 2}
+      propertyPath: m_LocalScale.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 449584, guid: e3823569ee35b9143b9a08dad9514bfa, type: 2}
+      propertyPath: m_LocalScale.z
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 11430848, guid: e3823569ee35b9143b9a08dad9514bfa, type: 2}
+      propertyPath: spacing
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 11430848, guid: e3823569ee35b9143b9a08dad9514bfa, type: 2}
+      propertyPath: ridgeWidth
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 11458984, guid: e3823569ee35b9143b9a08dad9514bfa, type: 2}
+      propertyPath: spacing
+      value: 11
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: e3823569ee35b9143b9a08dad9514bfa, type: 2}
@@ -297,3 +333,45 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 2
+--- !u!1 &2097873738
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 4
+  m_Component:
+  - 4: {fileID: 2097873739}
+  - 114: {fileID: 2097873740}
+  m_Layer: 0
+  m_Name: Dropspot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2097873739
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 2097873738}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -1.19, y: 1.76, z: -5.18}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 3
+--- !u!114 &2097873740
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 2097873738}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1dcc6869d30e1764892a14f4d923af7d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  prefab: {fileID: 11417594, guid: 836e9e5e90bfb884590d01c4c462219f, type: 2}
+  frequency: 3.07
+  frequencyNoise: 0.186

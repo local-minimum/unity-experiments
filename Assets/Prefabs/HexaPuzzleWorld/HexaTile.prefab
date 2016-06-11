@@ -89,9 +89,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   meshSubdivisionLvl: 4
-  size: 1.23
+  size: 10
   smoothings: 3
-  heightFactor: 0.22
+  heightFactor: 2
   typeProbs:
   - 0.3
   - 0.45
@@ -141,7 +141,7 @@ MonoBehaviour:
     m_RotationOrder: 0
   rotationSpeed: 0.014
   rotationSteps: 20
-  snapDistance: 0.6
+  snapDistance: 2
   playingField: {fileID: 0}
 --- !u!1001 &100100000
 Prefab:

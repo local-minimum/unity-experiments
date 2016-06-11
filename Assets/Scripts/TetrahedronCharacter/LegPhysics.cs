@@ -48,8 +48,6 @@ namespace TetrahedronCharacter {
 					if ((contacts [i].point - tipPos).sqrMagnitude < maxSqDistContactToTip) {
 						Grounded = true;
 						return;
-					} else {
-						Debug.Log ((contacts [i].point - tipPos).sqrMagnitude);
 					}
 				}
 			}

@@ -53,6 +53,8 @@ namespace TetrahedronCharacter {
 		}
 
 		public Vector3 BoneTipPosition(int bone) {
+			if (verts.Length < bone * 12 + 2)
+				Generate ();
 			return transform.TransformPoint (verts [bone * 12 + 2]);
 		}
 
@@ -116,10 +118,10 @@ namespace TetrahedronCharacter {
 		}
 
 		void Awake() {
-			if (mesh == null) {
-				mesh = new Mesh ();
-				mesh.name = "TetraBones";
-			}
+			
+			mesh = new Mesh ();
+			mesh.name = "TetraBones";
+
 			var mf = GetComponent<MeshFilter> ();
 			if (mf.sharedMesh != mesh)
 				mf.sharedMesh = mesh;

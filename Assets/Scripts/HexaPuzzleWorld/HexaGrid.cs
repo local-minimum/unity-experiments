@@ -102,7 +102,7 @@ namespace HexaPuzzleWorld {
 	public class HexaGrid : MonoBehaviour {
 
 		[SerializeField, Range(1, 50)] int rings;
-		[SerializeField, Range(0, 2)] float spacing;
+		[SerializeField, Range(0, 15)] float spacing;
 		[SerializeField] bool everythingFits = false;
 		[SerializeField] bool lockOnPlace = true;
 		[SerializeField, HideInInspector] HexaGridTile[,] grid;
