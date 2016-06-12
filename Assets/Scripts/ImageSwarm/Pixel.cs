@@ -18,8 +18,13 @@ namespace ImageSwarm {
 
 		void Start() {
 			freq = Random.Range (-noiseFrequency, noiseFrequency);
-			imageCenter = new Vector2 (image.texture.width / 2, image.texture.height / 2);
+			SetImage (image);
 			mr = GetComponent<MeshRenderer> ();
+		}
+
+		public void SetImage(Sprite image) {
+			this.image = image;
+			imageCenter = new Vector2 (image.texture.width / 2, image.texture.height / 2);
 		}
 
 		void Update () {
